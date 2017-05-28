@@ -23,5 +23,8 @@ class ViewController: NSViewController {
     }
 
 
+    @IBAction func didClickSearch(_ sender: Any) {
+        
+    }
 }
 

@@ -1,0 +1,11 @@
+.DS_Store
+/Pods/
+/GithubRepoSearcher.xcworkspace/
+/GithubRepoSearcher.xcodeproj/xcuserdata
+/GithubRepoSearcher.xcodeproj/project.xcworkspace
+
+# Ignore bundler config.
+/.bundle
+
+# Ignore bundler gems.
+vendor/bundle
