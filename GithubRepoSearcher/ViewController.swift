@@ -7,8 +7,16 @@
 //
 
 import Cocoa
+import RxSwift
+import RxCocoa
 
 class ViewController: NSViewController {
+    
+    @IBOutlet weak var searchButton: NSButton!
+    @IBOutlet var searchWordsTextView: NSTextView!
+    @IBOutlet var searchResultTextView: NSTextView!
+
+    let disposeBag = DisposeBag()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,10 +29,42 @@ class ViewController: NSViewController {
         // Update the view, if already loaded.
         }
     }
-
+    
 
     @IBAction func didClickSearch(_ sender: Any) {
+        guard let searchWords = searchWordsTextView.string else { return }
         
+        let words = searchWords.components(separatedBy: .whitespacesAndNewlines)
+        searchResultTextView.string = ""
+
+        DispatchQueue.global().async { [unowned self] in
+            for word in words {
+                
+                GithubCodeSearch.search(repo: "fastlane/fastlane", word: word)
+                    .observeOn(MainScheduler.instance)
+                    .subscribe { [unowned self] in
+                        switch $0 {
+                        case let .next(result):
+                            if let result = result {
+                                self.searchResultTextView.string =
+                                    self.searchResultTextView.string! + "\(result.totalCount)\n"
+                                print(result.totalCount)
+                            } else {
+                                self.searchResultTextView.string =
+                                    self.searchResultTextView.string! + "no result\n"
+                            }
+                        case .error(_):
+                            self.searchResultTextView.string =
+                                self.searchResultTextView.string! + "error\n"
+                            print("error")
+                        case .completed:
+                            break
+                        }
+                    }
+                    .addDisposableTo(self.disposeBag)
+                sleep(6)
+            }
+        }
     }
 }
 
