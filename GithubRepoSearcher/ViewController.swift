@@ -39,34 +39,41 @@ class ViewController: NSViewController {
         let words = searchWords.components(separatedBy: .whitespacesAndNewlines)
         searchResultTextView.string = ""
         
-        DispatchQueue.global().async { [unowned self] in
-            for word in words {
-                
-                GithubCodeSearch.search(repo: repoName, word: word)
-                    .observeOn(MainScheduler.instance)
-                    .subscribe { [unowned self] in
-                        switch $0 {
-                        case let .next(result):
-                            if let result = result {
-                                self.searchResultTextView.string =
-                                    self.searchResultTextView.string! + "\(result.totalCount)\t\(word)\n"
-                                print(result.totalCount)
-                            } else {
-                                self.searchResultTextView.string =
-                                    self.searchResultTextView.string! + "no result\n"
-                            }
-                        case .error(_):
+        var doSearch: (([String], Int) -> Void)!
+        doSearch = { (words, current) in
+            let word = words[current]
+            GithubCodeSearch.search(repo: repoName, word: word)
+                .observeOn(MainScheduler.instance)
+                .subscribe { [unowned self] in
+                    switch $0 {
+                    case let .next(result):
+                        if let result = result {
                             self.searchResultTextView.string =
-                                self.searchResultTextView.string! + "error\n"
-                            print("error")
-                        case .completed:
-                            break
+                                self.searchResultTextView.string! + "\(result.totalCount)\t\(word)\n"
+                        } else {
+                            self.searchResultTextView.string =
+                                self.searchResultTextView.string! + "no result\n"
+                        }
+                    case .error(_):
+                        self.searchResultTextView.string =
+                            self.searchResultTextView.string! + "error\n"
+                    case .completed:
+                        let next = current + 1
+                        if next < words.count {
+                            DispatchQueue.global().async {
+                                sleep(6)    // GitHubのAPI制限を超えないようにするため少し待つ
+                                doSearch(words, next)
+                            }
+                        } else {
+                            self.searchResultTextView.string =
+                                self.searchResultTextView.string! + "### Search has done! ###\n"
                         }
                     }
-                    .addDisposableTo(self.disposeBag)
-                sleep(6)
-            }
+                }
+                .addDisposableTo(self.disposeBag)
         }
+
+        doSearch(words, 0)
     }
 }
 
