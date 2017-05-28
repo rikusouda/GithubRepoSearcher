@@ -15,7 +15,9 @@ class ViewController: NSViewController {
     @IBOutlet weak var searchButton: NSButton!
     @IBOutlet var searchWordsTextView: NSTextView!
     @IBOutlet var searchResultTextView: NSTextView!
+    @IBOutlet weak var repoName: NSTextField!
 
+    
     let disposeBag = DisposeBag()
 
     override func viewDidLoad() {
@@ -29,25 +31,25 @@ class ViewController: NSViewController {
         // Update the view, if already loaded.
         }
     }
-    
 
     @IBAction func didClickSearch(_ sender: Any) {
         guard let searchWords = searchWordsTextView.string else { return }
+        let repoName = self.repoName.stringValue
         
         let words = searchWords.components(separatedBy: .whitespacesAndNewlines)
         searchResultTextView.string = ""
-
+        
         DispatchQueue.global().async { [unowned self] in
             for word in words {
                 
-                GithubCodeSearch.search(repo: "fastlane/fastlane", word: word)
+                GithubCodeSearch.search(repo: repoName, word: word)
                     .observeOn(MainScheduler.instance)
                     .subscribe { [unowned self] in
                         switch $0 {
                         case let .next(result):
                             if let result = result {
                                 self.searchResultTextView.string =
-                                    self.searchResultTextView.string! + "\(result.totalCount)\n"
+                                    self.searchResultTextView.string! + "\(result.totalCount)\t\(word)\n"
                                 print(result.totalCount)
                             } else {
                                 self.searchResultTextView.string =
